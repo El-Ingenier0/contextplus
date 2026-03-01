@@ -126,15 +126,36 @@ describe("cli-primitives", () => {
     assert.match(out.tree, /alpha\.ts/);
   });
 
+  it("ctxp tree rejects target paths outside the project root", async () => {
+    await assert.rejects(
+      ctxpTree({ rootDir: FIXTURE_DIR, targetPath: "../" }),
+      /outside the project root/,
+    );
+  });
+
   it("ctxp analyze returns result payload", async () => {
     const out = await ctxpAnalyze({ rootDir: FIXTURE_DIR, targetPath: "src/alpha.ts" });
     assert.ok(typeof out.result === "string");
+  });
+
+  it("ctxp analyze rejects target paths outside the project root", async () => {
+    await assert.rejects(
+      ctxpAnalyze({ rootDir: FIXTURE_DIR, targetPath: "../README.md" }),
+      /outside the project root/,
+    );
   });
 
   it("ctxp hub returns hub view text", async () => {
     const out = await ctxpHub({ rootDir: FIXTURE_DIR, hubPath: "feature-hub.md" });
     assert.ok(typeof out.result === "string");
     assert.match(out.result, /Feature Hub|alpha\.ts/);
+  });
+
+  it("ctxp hub rejects hub paths outside the project root", async () => {
+    await assert.rejects(
+      ctxpHub({ rootDir: FIXTURE_DIR, hubPath: "../outside-hub.md" }),
+      /outside the project root/,
+    );
   });
 
   it("ctxp propose-commit + restore-list + restore roundtrip", async () => {

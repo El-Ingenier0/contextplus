@@ -4,7 +4,9 @@
 import { readFile } from "fs/promises";
 import { relative, resolve } from "path";
 import { semanticCodeSearchResults, type SemanticSearchOptions } from "../tools/semantic-search.js";
+import { invalidateSearchCache } from "../tools/semantic-search.js";
 import { semanticIdentifierSearch } from "../tools/semantic-identifiers.js";
+import { invalidateIdentifierSearchCache } from "../tools/semantic-identifiers.js";
 import { getContextTree } from "../tools/context-tree.js";
 import { getFileSkeleton } from "../tools/file-skeleton.js";
 import { getBlastRadiusData } from "../tools/blast-radius.js";
@@ -39,6 +41,17 @@ function normalizePathWithinRoot(rootDir: string, targetPath: string): string {
   const full = resolve(root, targetPath);
   const rel = relative(root, full).replace(/\\/g, "/");
   if (!rel || rel === "." || rel === ".." || rel.startsWith("../")) {
+    throw new Error(`Path "${targetPath}" is outside the project root.`);
+  }
+  return rel;
+}
+
+function normalizePathWithinRootAllowRoot(rootDir: string, targetPath: string): string {
+  const root = resolve(rootDir);
+  const full = resolve(root, targetPath);
+  const rel = relative(root, full).replace(/\\/g, "/");
+  if (rel === "" || rel === ".") return ".";
+  if (rel === ".." || rel.startsWith("../")) {
     throw new Error(`Path "${targetPath}" is outside the project root.`);
   }
   return rel;
@@ -205,9 +218,12 @@ export async function ctxpTree(options: {
   includeSymbols?: boolean;
   maxTokens?: number;
 }) {
+  const targetPath = options.targetPath
+    ? normalizePathWithinRootAllowRoot(options.rootDir, options.targetPath)
+    : undefined;
   const text = await getContextTree({
     rootDir: options.rootDir,
-    targetPath: options.targetPath,
+    targetPath,
     depthLimit: options.depthLimit,
     includeSymbols: options.includeSymbols,
     maxTokens: options.maxTokens,
@@ -231,8 +247,11 @@ export async function ctxpIdentifiers(options: {
 }
 
 export async function ctxpAnalyze(options: { rootDir: string; targetPath?: string }) {
-  const text = await runStaticAnalysis({ rootDir: options.rootDir, targetPath: options.targetPath });
-  return { targetPath: options.targetPath ?? null, result: text };
+  const targetPath = options.targetPath
+    ? normalizePathWithinRootAllowRoot(options.rootDir, options.targetPath)
+    : undefined;
+  const text = await runStaticAnalysis({ rootDir: options.rootDir, targetPath });
+  return { targetPath: targetPath ?? null, result: text };
 }
 
 export async function ctxpHub(options: {
@@ -241,9 +260,12 @@ export async function ctxpHub(options: {
   featureName?: string;
   showOrphans?: boolean;
 }) {
+  const hubPath = options.hubPath
+    ? normalizePathWithinRoot(options.rootDir, options.hubPath)
+    : undefined;
   const text = await getFeatureHub({
     rootDir: options.rootDir,
-    hubPath: options.hubPath,
+    hubPath,
     featureName: options.featureName,
     showOrphans: options.showOrphans,
   });
@@ -262,6 +284,8 @@ export async function ctxpProposeCommit(options: {
 }) {
   const path = normalizePathWithinRoot(options.rootDir, options.filePath);
   const result = await proposeCommit({ rootDir: options.rootDir, filePath: path, newContent: options.newContent });
+  invalidateSearchCache();
+  invalidateIdentifierSearchCache();
   return { filePath: path, result };
 }
 
@@ -272,5 +296,9 @@ export async function ctxpRestoreList(rootDir: string) {
 
 export async function ctxpRestore(options: { rootDir: string; pointId: string }) {
   const restored = await restorePoint(options.rootDir, options.pointId);
+  if (restored.length > 0) {
+    invalidateSearchCache();
+    invalidateIdentifierSearchCache();
+  }
   return { pointId: options.pointId, restoredCount: restored.length, restored };
 }
