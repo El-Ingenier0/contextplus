@@ -57,6 +57,11 @@ For Codex/CLI workflows with strict token budgets, Context+ also provides Unix-s
 - `ctxp-restore-list`
 - `ctxp-restore --point-id <id>`
 
+MCP-parity flags are also supported where relevant:
+- `ctxp-find --semantic-weight --keyword-weight --min-semantic-score --min-keyword-score --min-combined-score --require-keyword-match --require-semantic-match`
+- `ctxp-identifiers --include-kinds function,method,class --semantic-weight --keyword-weight`
+- `ctxp-tree --include-symbols=true|false`
+
 All primitives return JSON and support bounded outputs to reduce context burn.
 
 Example pipeline:
