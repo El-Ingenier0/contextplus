@@ -11,13 +11,21 @@ export interface BlastRadiusOptions {
   fileContext?: string;
 }
 
-interface SymbolUsage {
+export interface SymbolUsage {
   file: string;
   line: number;
   context: string;
 }
 
-export async function getBlastRadius(options: BlastRadiusOptions): Promise<string> {
+export interface BlastRadiusResult {
+  symbolName: string;
+  usageCount: number;
+  fileCount: number;
+  usagesByFile: Record<string, SymbolUsage[]>;
+  lowUsageWarning: boolean;
+}
+
+export async function getBlastRadiusData(options: BlastRadiusOptions): Promise<BlastRadiusResult> {
   const entries = await walkDirectory({ rootDir: options.rootDir, depthLimit: 0 });
   const files = entries.filter((e) => !e.isDirectory && isSupportedFile(e.path));
   const usages: SymbolUsage[] = [];
@@ -45,8 +53,6 @@ export async function getBlastRadius(options: BlastRadiusOptions): Promise<strin
     }
   }
 
-  if (usages.length === 0) return `Symbol "${options.symbolName}" is not used anywhere in the codebase.`;
-
   const byFile = new Map<string, SymbolUsage[]>();
   for (const u of usages) {
     const existing = byFile.get(u.file) ?? [];
@@ -54,19 +60,32 @@ export async function getBlastRadius(options: BlastRadiusOptions): Promise<strin
     byFile.set(u.file, existing);
   }
 
+  return {
+    symbolName: options.symbolName,
+    usageCount: usages.length,
+    fileCount: byFile.size,
+    usagesByFile: Object.fromEntries(byFile.entries()),
+    lowUsageWarning: usages.length <= 1,
+  };
+}
+
+export async function getBlastRadius(options: BlastRadiusOptions): Promise<string> {
+  const data = await getBlastRadiusData(options);
+  if (data.usageCount === 0) return `Symbol "${options.symbolName}" is not used anywhere in the codebase.`;
+
   const lines: string[] = [
-    `Blast radius for "${options.symbolName}": ${usages.length} usages in ${byFile.size} files\n`,
+    `Blast radius for "${options.symbolName}": ${data.usageCount} usages in ${data.fileCount} files\n`,
   ];
 
-  for (const [file, fileUsages] of byFile) {
+  for (const [file, fileUsages] of Object.entries(data.usagesByFile)) {
     lines.push(`  ${file}:`);
     for (const u of fileUsages) {
       lines.push(`    L${u.line}: ${u.context}`);
     }
   }
 
-  if (usages.length <= 1) {
-    lines.push(`\n⚠ LOW USAGE: This symbol is used only ${usages.length} time(s). Consider inlining if it's under 20 lines.`);
+  if (data.lowUsageWarning) {
+    lines.push(`\n⚠ LOW USAGE: This symbol is used only ${data.usageCount} time(s). Consider inlining if it's under 20 lines.`);
   }
 
   return lines.join("\n");

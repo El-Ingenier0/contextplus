@@ -3,7 +3,21 @@
   "version": "1.0.2",
   "type": "module",
   "bin": {
-    "contextplus": "./build/index.js"
+    "contextplus": "./build/index.js",
+    "ctxp": "./build/cli.js",
+    "ctxp-find": "./build/cli.js",
+    "ctxp-show": "./build/cli.js",
+    "ctxp-blast": "./build/cli.js",
+    "ctxp-skel": "./build/cli.js",
+    "ctxp-pack": "./build/cli.js",
+    "ctxp-tree": "./build/cli.js",
+    "ctxp-identifiers": "./build/cli.js",
+    "ctxp-analyze": "./build/cli.js",
+    "ctxp-hub": "./build/cli.js",
+    "ctxp-navigate": "./build/cli.js",
+    "ctxp-propose-commit": "./build/cli.js",
+    "ctxp-restore-list": "./build/cli.js",
+    "ctxp-restore": "./build/cli.js"
   },
   "scripts": {
     "build": "tsc",

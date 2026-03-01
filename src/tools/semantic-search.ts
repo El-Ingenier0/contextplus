@@ -128,7 +128,7 @@ async function buildIndex(rootDir: string): Promise<SearchIndex> {
   return index;
 }
 
-export async function semanticCodeSearch(options: SemanticSearchOptions): Promise<string> {
+export async function semanticCodeSearchResults(options: SemanticSearchOptions) {
   const index = await buildIndex(options.rootDir);
   const searchOptions: SearchQueryOptions = {
     topK: options.topK,
@@ -140,7 +140,11 @@ export async function semanticCodeSearch(options: SemanticSearchOptions): Promis
     requireKeywordMatch: options.requireKeywordMatch,
     requireSemanticMatch: options.requireSemanticMatch,
   };
-  const results = await index.search(options.query, searchOptions);
+  return index.search(options.query, searchOptions);
+}
+
+export async function semanticCodeSearch(options: SemanticSearchOptions): Promise<string> {
+  const results = await semanticCodeSearchResults(options);
 
   if (results.length === 0) return "No matching files found for the given query.";
 
