@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "tool": "get_context_tree",
+      "cliCommand": "tree",
+      "args": [
+        { "mcp": "target_path", "cli": "--path", "status": "supported" },
+        { "mcp": "depth_limit", "cli": "--depth-limit", "status": "supported" },
+        { "mcp": "include_symbols", "cli": "--include-symbols", "status": "supported" },
+        { "mcp": "max_tokens", "cli": "--max-tokens", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "semantic_identifier_search",
+      "cliCommand": "identifiers",
+      "args": [
+        { "mcp": "query", "cli": "<positional>", "status": "supported" },
+        { "mcp": "top_k", "cli": "--top-k", "status": "supported" },
+        { "mcp": "top_calls_per_identifier", "cli": "--top-calls", "status": "supported" },
+        { "mcp": "include_kinds", "cli": "--include-kinds", "status": "supported" },
+        { "mcp": "semantic_weight", "cli": "--semantic-weight", "status": "supported" },
+        { "mcp": "keyword_weight", "cli": "--keyword-weight", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "get_file_skeleton",
+      "cliCommand": "skel",
+      "args": [
+        { "mcp": "file_path", "cli": "<positional>", "status": "supported" }
+      ],
+      "notes": "Also available via ctxp-show --path <file>."
+    },
+    {
+      "tool": "semantic_code_search",
+      "cliCommand": "find",
+      "args": [
+        { "mcp": "query", "cli": "<positional>", "status": "supported" },
+        { "mcp": "top_k", "cli": "--top-k", "status": "supported" },
+        { "mcp": "semantic_weight", "cli": "--semantic-weight", "status": "supported" },
+        { "mcp": "keyword_weight", "cli": "--keyword-weight", "status": "supported" },
+        { "mcp": "min_semantic_score", "cli": "--min-semantic-score", "status": "supported" },
+        { "mcp": "min_keyword_score", "cli": "--min-keyword-score", "status": "supported" },
+        { "mcp": "min_combined_score", "cli": "--min-combined-score", "status": "supported" },
+        { "mcp": "require_keyword_match", "cli": "--require-keyword-match", "status": "supported" },
+        { "mcp": "require_semantic_match", "cli": "--require-semantic-match", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "get_blast_radius",
+      "cliCommand": "blast",
+      "args": [
+        { "mcp": "symbol_name", "cli": "<positional>", "status": "supported" },
+        { "mcp": "file_context", "cli": "--file", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "run_static_analysis",
+      "cliCommand": "analyze",
+      "args": [
+        { "mcp": "target_path", "cli": "--path", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "propose_commit",
+      "cliCommand": "propose-commit",
+      "args": [
+        { "mcp": "file_path", "cli": "--file-path", "status": "supported" },
+        { "mcp": "new_content", "cli": "--new-content", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "list_restore_points",
+      "cliCommand": "restore-list",
+      "args": []
+    },
+    {
+      "tool": "undo_change",
+      "cliCommand": "restore",
+      "args": [
+        { "mcp": "point_id", "cli": "--point-id", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "semantic_navigate",
+      "cliCommand": "navigate",
+      "args": [
+        { "mcp": "max_depth", "cli": "--max-depth", "status": "supported" },
+        { "mcp": "max_clusters", "cli": "--max-clusters", "status": "supported" }
+      ]
+    },
+    {
+      "tool": "get_feature_hub",
+      "cliCommand": "hub",
+      "args": [
+        { "mcp": "hub_path", "cli": "--path", "status": "supported" },
+        { "mcp": "feature_name", "cli": "--feature", "status": "supported" },
+        { "mcp": "show_orphans", "cli": "--show-orphans", "status": "supported" }
+      ]
+    }
+  ]
+}
