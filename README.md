@@ -64,6 +64,8 @@ MCP-parity flags are also supported where relevant:
 
 All primitives return JSON and support bounded outputs to reduce context burn.
 
+See full MCP↔CLI contract coverage in `docs/CLI_MCP_PARITY.md`.
+
 Example pipeline:
 
 ```bash

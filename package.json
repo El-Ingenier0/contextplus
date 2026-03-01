@@ -25,7 +25,8 @@
     "start": "node build/index.js",
     "test": "node --test test/main/*.test.mjs",
     "test:demo": "node --test test/demo/*.demo.mjs",
-    "test:all": "node --test test/main/*.test.mjs test/demo/*.demo.mjs"
+    "test:all": "node --test test/main/*.test.mjs test/demo/*.demo.mjs",
+    "docs:parity": "node scripts/generate-parity-table.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
