@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+import { realpathSync } from "fs";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import { basename, dirname, resolve } from "path";
-import { pathToFileURL } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import { ctxpBlast, ctxpFind, ctxpPack, ctxpShowByPath } from "./services/primitives.js";
 
 const ROOT_DIR = process.cwd();
@@ -11,7 +12,7 @@ const DEFAULT_FIND_STATE = ".mcp_data/ctxp-find-last.json";
 type Args = Record<string, string | boolean>;
 
 export function inferCommandFromBin(binPath = process.argv[1] ?? ""): string {
-  const bin = basename(binPath);
+  const bin = basename(binPath).replace(/\.(cmd|ps1|exe)$/i, "");
   if (bin.startsWith("ctxp-")) return bin.slice("ctxp-".length);
   return "";
 }
@@ -151,7 +152,15 @@ export async function runCli(argv = process.argv.slice(2)): Promise<void> {
 }
 
 const invokedPath = process.argv[1];
-const isEntrypoint = invokedPath ? import.meta.url === pathToFileURL(invokedPath).href : false;
+const currentFilePath = fileURLToPath(import.meta.url);
+const isEntrypoint = (() => {
+  if (!invokedPath) return false;
+  try {
+    return realpathSync(invokedPath) === realpathSync(currentFilePath);
+  } catch {
+    return import.meta.url === pathToFileURL(invokedPath).href;
+  }
+})();
 
 if (isEntrypoint) {
   runCli().catch((error) => {
