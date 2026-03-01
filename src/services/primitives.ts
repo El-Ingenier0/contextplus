@@ -4,8 +4,15 @@
 import { readFile } from "fs/promises";
 import { relative, resolve } from "path";
 import { semanticCodeSearchResults, type SemanticSearchOptions } from "../tools/semantic-search.js";
+import { semanticIdentifierSearch } from "../tools/semantic-identifiers.js";
+import { getContextTree } from "../tools/context-tree.js";
 import { getFileSkeleton } from "../tools/file-skeleton.js";
 import { getBlastRadiusData } from "../tools/blast-radius.js";
+import { runStaticAnalysis } from "../tools/static-analysis.js";
+import { getFeatureHub } from "../tools/feature-hub.js";
+import { semanticNavigate } from "../tools/semantic-navigate.js";
+import { proposeCommit } from "../tools/propose-commit.js";
+import { listRestorePoints, restorePoint } from "../git/shadow.js";
 import { walkDirectory } from "../core/walker.js";
 
 export interface PrimitiveFindResult {
@@ -189,4 +196,81 @@ export async function ctxpPack(options: {
     items,
     budgetChars,
   };
+}
+
+export async function ctxpTree(options: {
+  rootDir: string;
+  targetPath?: string;
+  depthLimit?: number;
+  includeSymbols?: boolean;
+  maxTokens?: number;
+}) {
+  const text = await getContextTree({
+    rootDir: options.rootDir,
+    targetPath: options.targetPath,
+    depthLimit: options.depthLimit,
+    includeSymbols: options.includeSymbols,
+    maxTokens: options.maxTokens,
+  });
+  return { tree: text };
+}
+
+export async function ctxpIdentifiers(options: {
+  rootDir: string;
+  query: string;
+  topK?: number;
+  topCallsPerIdentifier?: number;
+}) {
+  const text = await semanticIdentifierSearch({
+    rootDir: options.rootDir,
+    query: options.query,
+    topK: options.topK,
+    topCallsPerIdentifier: options.topCallsPerIdentifier,
+  });
+  return { query: options.query, result: text };
+}
+
+export async function ctxpAnalyze(options: { rootDir: string; targetPath?: string }) {
+  const text = await runStaticAnalysis({ rootDir: options.rootDir, targetPath: options.targetPath });
+  return { targetPath: options.targetPath ?? null, result: text };
+}
+
+export async function ctxpHub(options: {
+  rootDir: string;
+  hubPath?: string;
+  featureName?: string;
+  showOrphans?: boolean;
+}) {
+  const text = await getFeatureHub({
+    rootDir: options.rootDir,
+    hubPath: options.hubPath,
+    featureName: options.featureName,
+    showOrphans: options.showOrphans,
+  });
+  return { result: text };
+}
+
+export async function ctxpNavigate(options: { rootDir: string; maxDepth?: number; maxClusters?: number }) {
+  const text = await semanticNavigate({ rootDir: options.rootDir, maxDepth: options.maxDepth, maxClusters: options.maxClusters });
+  return { result: text };
+}
+
+export async function ctxpProposeCommit(options: {
+  rootDir: string;
+  filePath: string;
+  newContent: string;
+}) {
+  const path = normalizePathWithinRoot(options.rootDir, options.filePath);
+  const result = await proposeCommit({ rootDir: options.rootDir, filePath: path, newContent: options.newContent });
+  return { filePath: path, result };
+}
+
+export async function ctxpRestoreList(rootDir: string) {
+  const points = await listRestorePoints(rootDir);
+  return { count: points.length, points };
+}
+
+export async function ctxpRestore(options: { rootDir: string; pointId: string }) {
+  const restored = await restorePoint(options.rootDir, options.pointId);
+  return { pointId: options.pointId, restoredCount: restored.length, restored };
 }

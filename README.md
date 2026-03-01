@@ -48,6 +48,14 @@ For Codex/CLI workflows with strict token budgets, Context+ also provides Unix-s
 - `ctxp-blast SYMBOL`
 - `ctxp-skel path/to/file.ts`
 - `ctxp-pack "query" --top-k 8 --budget-chars 6000`
+- `ctxp-tree --path src --depth-limit 2`
+- `ctxp-identifiers "query" --top-k 5`
+- `ctxp-analyze --path src/file.ts`
+- `ctxp-hub --path feature-hub.md`
+- `ctxp-navigate --max-depth 3 --max-clusters 20`
+- `ctxp-propose-commit --file-path src/x.ts --new-content "..."`
+- `ctxp-restore-list`
+- `ctxp-restore --point-id <id>`
 
 All primitives return JSON and support bounded outputs to reduce context burn.
 

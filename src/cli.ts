@@ -4,7 +4,20 @@ import { realpathSync } from "fs";
 import { writeFile, mkdir, readFile } from "fs/promises";
 import { basename, dirname, resolve } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
-import { ctxpBlast, ctxpFind, ctxpPack, ctxpShowByPath } from "./services/primitives.js";
+import {
+  ctxpAnalyze,
+  ctxpBlast,
+  ctxpFind,
+  ctxpHub,
+  ctxpIdentifiers,
+  ctxpNavigate,
+  ctxpPack,
+  ctxpProposeCommit,
+  ctxpRestore,
+  ctxpRestoreList,
+  ctxpShowByPath,
+  ctxpTree,
+} from "./services/primitives.js";
 
 const ROOT_DIR = process.cwd();
 const DEFAULT_FIND_STATE = ".mcp_data/ctxp-find-last.json";
@@ -51,6 +64,12 @@ function intArg(value: string | boolean | undefined, fallback: number): number {
   if (typeof value !== "string") return fallback;
   const n = Number.parseInt(value, 10);
   return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
+function intArgAllowZero(value: string | boolean | undefined, fallback: number): number {
+  if (typeof value !== "string") return fallback;
+  const n = Number.parseInt(value, 10);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
 async function writeJson(path: string, obj: unknown): Promise<void> {
@@ -127,6 +146,76 @@ async function cmdPack(positionals: string[], args: Args): Promise<void> {
   process.stdout.write(`${JSON.stringify(out)}\n`);
 }
 
+async function cmdTree(args: Args): Promise<void> {
+  const out = await ctxpTree({
+    rootDir: ROOT_DIR,
+    targetPath: typeof args.path === "string" ? args.path : undefined,
+    depthLimit: intArgAllowZero(args["depth-limit"], 0),
+    includeSymbols: args["include-symbols"] === true ? true : undefined,
+    maxTokens: intArg(args["max-tokens"], 20000),
+  });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdIdentifiers(positionals: string[], args: Args): Promise<void> {
+  const query = positionals.join(" ").trim();
+  if (!query) throw new Error("identifiers requires a query string");
+  const out = await ctxpIdentifiers({
+    rootDir: ROOT_DIR,
+    query,
+    topK: intArg(args["top-k"], 5),
+    topCallsPerIdentifier: intArg(args["top-calls"], 10),
+  });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdAnalyze(positionals: string[], args: Args): Promise<void> {
+  const targetPath = (typeof args.path === "string" ? args.path : positionals[0]) || undefined;
+  const out = await ctxpAnalyze({ rootDir: ROOT_DIR, targetPath });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdHub(positionals: string[], args: Args): Promise<void> {
+  const out = await ctxpHub({
+    rootDir: ROOT_DIR,
+    hubPath: (typeof args.path === "string" ? args.path : undefined) ?? (positionals[0] || undefined),
+    featureName: typeof args.feature === "string" ? args.feature : undefined,
+    showOrphans: args["show-orphans"] === true,
+  });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdNavigate(args: Args): Promise<void> {
+  const out = await ctxpNavigate({
+    rootDir: ROOT_DIR,
+    maxDepth: intArg(args["max-depth"], 3),
+    maxClusters: intArg(args["max-clusters"], 20),
+  });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdProposeCommit(args: Args): Promise<void> {
+  const filePath = typeof args["file-path"] === "string" ? args["file-path"] : undefined;
+  const newContent = typeof args["new-content"] === "string" ? args["new-content"] : undefined;
+  if (!filePath || newContent === undefined) {
+    throw new Error("propose-commit requires --file-path and --new-content");
+  }
+  const out = await ctxpProposeCommit({ rootDir: ROOT_DIR, filePath, newContent });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdRestoreList(): Promise<void> {
+  const out = await ctxpRestoreList(ROOT_DIR);
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
+async function cmdRestore(args: Args): Promise<void> {
+  const pointId = typeof args["point-id"] === "string" ? args["point-id"] : undefined;
+  if (!pointId) throw new Error("restore requires --point-id");
+  const out = await ctxpRestore({ rootDir: ROOT_DIR, pointId });
+  process.stdout.write(`${JSON.stringify(out)}\n`);
+}
+
 export async function runCli(argv = process.argv.slice(2)): Promise<void> {
   const { command, positionals, args } = parseArgs(argv);
   switch (command) {
@@ -145,8 +234,32 @@ export async function runCli(argv = process.argv.slice(2)): Promise<void> {
     case "pack":
       await cmdPack(positionals, args);
       break;
+    case "tree":
+      await cmdTree(args);
+      break;
+    case "identifiers":
+      await cmdIdentifiers(positionals, args);
+      break;
+    case "analyze":
+      await cmdAnalyze(positionals, args);
+      break;
+    case "hub":
+      await cmdHub(positionals, args);
+      break;
+    case "navigate":
+      await cmdNavigate(args);
+      break;
+    case "propose-commit":
+      await cmdProposeCommit(args);
+      break;
+    case "restore-list":
+      await cmdRestoreList();
+      break;
+    case "restore":
+      await cmdRestore(args);
+      break;
     default:
-      process.stderr.write("Usage: ctxp <find|show|blast|skel|pack> ...\n");
+      process.stderr.write("Usage: ctxp <find|show|blast|skel|pack|tree|identifiers|analyze|hub|navigate|propose-commit|restore-list|restore> ...\n");
       process.exit(2);
   }
 }

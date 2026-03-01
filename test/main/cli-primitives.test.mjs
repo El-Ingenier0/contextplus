@@ -3,7 +3,18 @@ import assert from "node:assert/strict";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "../../build/cli.js";
-import { ctxpBlast, ctxpFind, ctxpPack, ctxpShowByPath } from "../../build/services/primitives.js";
+import {
+  ctxpAnalyze,
+  ctxpBlast,
+  ctxpFind,
+  ctxpHub,
+  ctxpPack,
+  ctxpProposeCommit,
+  ctxpRestore,
+  ctxpRestoreList,
+  ctxpShowByPath,
+  ctxpTree,
+} from "../../build/services/primitives.js";
 
 const REPO_ROOT = process.cwd();
 const FIXTURE_DIR = join(REPO_ROOT, "test", "_cli_fixtures");
@@ -25,6 +36,11 @@ async function setup() {
   await writeFile(
     join(FIXTURE_DIR, "src", "gamma.ts"),
     "// Gamma module\nimport { computeVcr } from './alpha';\nexport const score = computeVcr(20,5);\nexport function fn1(){return score}\nexport function fn2(){return score}\nexport function fn3(){return score}\n",
+    "utf-8",
+  );
+  await writeFile(
+    join(FIXTURE_DIR, "feature-hub.md"),
+    "# Feature Hub\n\n[[src/alpha.ts]]\n",
     "utf-8",
   );
 }
@@ -102,6 +118,40 @@ describe("cli-primitives", () => {
     assert.ok(Array.isArray(obj.items));
     const total = obj.items.reduce((n, it) => n + it.excerpt.length, 0);
     assert.ok(total <= 180);
+  });
+
+  it("ctxp tree returns tree text payload", async () => {
+    const out = await ctxpTree({ rootDir: FIXTURE_DIR, includeSymbols: true, maxTokens: 1000 });
+    assert.ok(typeof out.tree === "string");
+    assert.match(out.tree, /alpha\.ts/);
+  });
+
+  it("ctxp analyze returns result payload", async () => {
+    const out = await ctxpAnalyze({ rootDir: FIXTURE_DIR, targetPath: "src/alpha.ts" });
+    assert.ok(typeof out.result === "string");
+  });
+
+  it("ctxp hub returns hub view text", async () => {
+    const out = await ctxpHub({ rootDir: FIXTURE_DIR, hubPath: "feature-hub.md" });
+    assert.ok(typeof out.result === "string");
+    assert.match(out.result, /Feature Hub|alpha\.ts/);
+  });
+
+  it("ctxp propose-commit + restore-list + restore roundtrip", async () => {
+    const proposed = await ctxpProposeCommit({
+      rootDir: FIXTURE_DIR,
+      filePath: "src/newfile.ts",
+      newContent: "// New file\n// Header line\n\nexport function x(){return 1}\n",
+    });
+    assert.equal(proposed.filePath, "src/newfile.ts");
+    assert.ok(typeof proposed.result === "string");
+
+    const points = await ctxpRestoreList(FIXTURE_DIR);
+    assert.ok(points.count >= 1);
+
+    const restored = await ctxpRestore({ rootDir: FIXTURE_DIR, pointId: points.points[0].id });
+    assert.equal(restored.pointId, points.points[0].id);
+    assert.ok(Array.isArray(restored.restored));
   });
 
   after(async () => {
