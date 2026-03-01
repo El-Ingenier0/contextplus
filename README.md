@@ -39,6 +39,26 @@ https://github.com/user-attachments/assets/a97a451f-c9b4-468d-b036-15b65fc13e79
 | `list_restore_points` | List all shadow restore points created by `propose_commit`. Each captures file state before AI changes.    |
 | `undo_change`         | Restore files to their state before a specific AI change. Uses shadow restore points. Does not affect git. |
 
+## Low-context CLI primitives (`ctxp-*`)
+
+For Codex/CLI workflows with strict token budgets, Context+ also provides Unix-style primitives:
+
+- `ctxp-find "query" --top-k 8`
+- `ctxp-show --id hit-1` (or `--path src/file.ts`)
+- `ctxp-blast SYMBOL`
+- `ctxp-skel path/to/file.ts`
+- `ctxp-pack "query" --top-k 8 --budget-chars 6000`
+
+All primitives return JSON and support bounded outputs to reduce context burn.
+
+Example pipeline:
+
+```bash
+ctxp-find "vcr tier sizing" --top-k 12 > /tmp/find.json
+ctxp-show --id hit-1
+ctxp-pack "vcr tier sizing" --top-k 8 --budget-chars 6000 > /tmp/context-pack.json
+```
+
 ## Setup
 
 ### Quick Start (npx / bunx)
