@@ -65,6 +65,12 @@ describe("cli-primitives", () => {
     assert.equal(parsed.args["top-k"], "2");
   });
 
+  it("parseArgs preserves explicit false-like flag values", () => {
+    const parsed = parseArgs(["tree", "--include-symbols=false"]);
+    assert.equal(parsed.command, "tree");
+    assert.equal(parsed.args["include-symbols"], "false");
+  });
+
   it("ctxp show returns bounded skeleton output", async () => {
     const out = await ctxpShowByPath({
       rootDir: FIXTURE_DIR,
@@ -104,6 +110,23 @@ describe("cli-primitives", () => {
     assert.equal(out.query, "module");
     assert.equal(out.hits.length, 1);
     assert.equal(out.hits[0].id, "hit-1");
+  });
+
+  it("ctxp find accepts MCP-style score/weight filters", async () => {
+    const out = await ctxpFind({
+      rootDir: FIXTURE_DIR,
+      query: "module",
+      topK: 3,
+      semanticWeight: 0.72,
+      keywordWeight: 0.28,
+      minSemanticScore: 0,
+      minKeywordScore: 0,
+      minCombinedScore: 0,
+      requireKeywordMatch: true,
+      requireSemanticMatch: false,
+    });
+    assert.equal(out.query, "module");
+    assert.ok(Array.isArray(out.hits));
   });
 
   it("ctxp pack respects budget and returns selected items", async () => {

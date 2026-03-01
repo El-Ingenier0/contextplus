@@ -72,6 +72,27 @@ function intArgAllowZero(value: string | boolean | undefined, fallback: number):
   return Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
+function floatArg(value: string | boolean | undefined, fallback?: number): number | undefined {
+  if (typeof value !== "string") return fallback;
+  const n = Number.parseFloat(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function boolArg(value: string | boolean | undefined): boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (typeof value !== "string") return undefined;
+  const v = value.trim().toLowerCase();
+  if (v === "true" || v === "1" || v === "yes") return true;
+  if (v === "false" || v === "0" || v === "no") return false;
+  return undefined;
+}
+
+function stringListArg(value: string | boolean | undefined): string[] | undefined {
+  if (typeof value !== "string") return undefined;
+  const items = value.split(",").map((v) => v.trim()).filter(Boolean);
+  return items.length > 0 ? items : undefined;
+}
+
 async function writeJson(path: string, obj: unknown): Promise<void> {
   const full = resolve(ROOT_DIR, path);
   await mkdir(dirname(full), { recursive: true });
@@ -92,7 +113,18 @@ async function cmdFind(positionals: string[], args: Args): Promise<void> {
   if (!query) throw new Error("find requires a query string");
   const topK = intArg(args["top-k"], 8);
 
-  const out = await ctxpFind({ rootDir: ROOT_DIR, query, topK });
+  const out = await ctxpFind({
+    rootDir: ROOT_DIR,
+    query,
+    topK,
+    semanticWeight: floatArg(args["semantic-weight"]),
+    keywordWeight: floatArg(args["keyword-weight"]),
+    minSemanticScore: floatArg(args["min-semantic-score"]),
+    minKeywordScore: floatArg(args["min-keyword-score"]),
+    minCombinedScore: floatArg(args["min-combined-score"]),
+    requireKeywordMatch: boolArg(args["require-keyword-match"]),
+    requireSemanticMatch: boolArg(args["require-semantic-match"]),
+  });
   const statePath = typeof args.out === "string" ? args.out : DEFAULT_FIND_STATE;
   await writeJson(statePath, out);
   process.stdout.write(`${JSON.stringify(out)}\n`);
@@ -151,7 +183,7 @@ async function cmdTree(args: Args): Promise<void> {
     rootDir: ROOT_DIR,
     targetPath: typeof args.path === "string" ? args.path : undefined,
     depthLimit: intArgAllowZero(args["depth-limit"], 0),
-    includeSymbols: args["include-symbols"] === true ? true : undefined,
+    includeSymbols: boolArg(args["include-symbols"]),
     maxTokens: intArg(args["max-tokens"], 20000),
   });
   process.stdout.write(`${JSON.stringify(out)}\n`);
@@ -165,6 +197,9 @@ async function cmdIdentifiers(positionals: string[], args: Args): Promise<void> 
     query,
     topK: intArg(args["top-k"], 5),
     topCallsPerIdentifier: intArg(args["top-calls"], 10),
+    includeKinds: stringListArg(args["include-kinds"]),
+    semanticWeight: floatArg(args["semantic-weight"]),
+    keywordWeight: floatArg(args["keyword-weight"]),
   });
   process.stdout.write(`${JSON.stringify(out)}\n`);
 }

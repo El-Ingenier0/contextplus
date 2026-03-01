@@ -236,12 +236,18 @@ export async function ctxpIdentifiers(options: {
   query: string;
   topK?: number;
   topCallsPerIdentifier?: number;
+  includeKinds?: string[];
+  semanticWeight?: number;
+  keywordWeight?: number;
 }) {
   const text = await semanticIdentifierSearch({
     rootDir: options.rootDir,
     query: options.query,
     topK: options.topK,
     topCallsPerIdentifier: options.topCallsPerIdentifier,
+    includeKinds: options.includeKinds,
+    semanticWeight: options.semanticWeight,
+    keywordWeight: options.keywordWeight,
   });
   return { query: options.query, result: text };
 }
