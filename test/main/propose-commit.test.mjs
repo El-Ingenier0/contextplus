@@ -17,7 +17,7 @@ describe("propose-commit", async () => {
   describe("proposeCommit", () => {
     it("saves a valid file with proper header", async () => {
       const content =
-        "// Module description line 1\n// Module description line 2\n\nfunction main() {\n  return 1;\n}\n";
+        "// Module description line 1\n// FEATURE: Commit gatekeeper tests\n\nfunction main() {\n  return 1;\n}\n";
       const result = await proposeCommit({
         rootDir: FIXTURE_DIR,
         filePath: "valid.ts",
@@ -105,7 +105,7 @@ describe("propose-commit", async () => {
 
     it("creates a restore point before saving", async () => {
       const content =
-        "// Restore test 1\n// Restore test 2\n\nfunction r() {}\n";
+        "// Restore test 1\n// FEATURE: Restore point validation\n\nfunction r() {}\n";
       const result = await proposeCommit({
         rootDir: FIXTURE_DIR,
         filePath: "restore.ts",
@@ -129,7 +129,7 @@ describe("propose-commit", async () => {
     });
 
     it("creates nested directories when needed", async () => {
-      const content = "// Deep 1\n// Deep 2\n\nfunction deep() {}\n";
+      const content = "// Deep 1\n// FEATURE: Nested file creation\n\nfunction deep() {}\n";
       const result = await proposeCommit({
         rootDir: FIXTURE_DIR,
         filePath: "sub/dir/deep.ts",

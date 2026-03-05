@@ -108,8 +108,7 @@ export async function proposeCommit(options: ProposeCommitOptions): Promise<stri
   }
   allErrors.push(...validateAbstraction(lines));
 
-  const commentErrors = allErrors.filter((e) => e.rule === "no-comments");
-  if (commentErrors.length > 5) {
+  if (allErrors.length > 0) {
     return [
       `REJECTED: ${allErrors.length} violations found.\n`,
       ...allErrors.slice(0, 10).map((e) => `  ❌ [${e.rule}] ${e.message}`),
@@ -118,17 +117,11 @@ export async function proposeCommit(options: ProposeCommitOptions): Promise<stri
     ].join("\n");
   }
 
-  const warnings = allErrors.filter((e) => e.rule !== "no-comments" || commentErrors.length <= 5);
-
   await createRestorePoint(options.rootDir, [options.filePath], `Pre-commit: ${options.filePath}`);
   await mkdir(dirname(fullPath), { recursive: true });
   await writeFile(fullPath, options.newContent, "utf-8");
 
   const result = [`✅ File saved: ${options.filePath}`];
-  if (warnings.length > 0) {
-    result.push(`\n⚠ ${warnings.length} warning(s):`);
-    for (const w of warnings) result.push(`  ⚠ [${w.rule}] ${w.message}`);
-  }
   result.push(`\nRestore point created. Use undo tools if needed.`);
 
   return result.join("\n");

@@ -1,7 +1,7 @@
 import { describe, it, after, before } from "node:test";
 import assert from "node:assert/strict";
 import { runStaticAnalysis } from "../../build/tools/static-analysis.js";
-import { writeFile, mkdir, rm } from "fs/promises";
+import { writeFile, mkdir, rm, stat } from "fs/promises";
 import { join } from "path";
 
 const FIXTURE_DIR = join(process.cwd(), "test", "_static_fixtures");
@@ -9,6 +9,15 @@ const FIXTURE_DIR = join(process.cwd(), "test", "_static_fixtures");
 async function setup() {
   await rm(FIXTURE_DIR, { recursive: true, force: true });
   await mkdir(FIXTURE_DIR, { recursive: true });
+}
+
+async function fileExists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 describe("static-analysis", async () => {
@@ -86,6 +95,22 @@ describe("static-analysis", async () => {
         targetPath: "err.ts",
       });
       assert.ok(typeof result === "string");
+    });
+
+    it("treats targetPath as a literal argument (no shell expansion)", async () => {
+      await writeFile(
+        join(FIXTURE_DIR, "tsconfig.json"),
+        '{"compilerOptions":{"strict":true}}',
+      );
+      const marker = join(FIXTURE_DIR, "injection-marker");
+      await rm(marker, { force: true });
+
+      await runStaticAnalysis({
+        rootDir: FIXTURE_DIR,
+        targetPath: `clean.ts;touch ${marker}`,
+      });
+
+      assert.equal(await fileExists(marker), false);
     });
 
     it("whole directory scan returns string", async () => {

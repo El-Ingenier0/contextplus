@@ -185,7 +185,7 @@ describe("cli-primitives", () => {
     const proposed = await ctxpProposeCommit({
       rootDir: FIXTURE_DIR,
       filePath: "src/newfile.ts",
-      newContent: "// New file\n// Header line\n\nexport function x(){return 1}\n",
+      newContent: "// New file\n// FEATURE: CLI primitive test\n\nexport function x(){return 1}\n",
     });
     assert.equal(proposed.filePath, "src/newfile.ts");
     assert.ok(typeof proposed.result === "string");
